@@ -1,0 +1,76 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: searcher
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: searcher
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-15432}:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U searcher -d searcher"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "127.0.0.1:${REDIS_PORT:-16379}:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  searcher:
+    build: .
+    env_file: .env
+    environment:
+      DATABASE_URL: postgres://searcher:${POSTGRES_PASSWORD}@postgres:5432/searcher
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  replay:
+    profiles: ["tools"]
+    build: .
+    env_file: .env
+    environment:
+      DATABASE_URL: postgres://searcher:${POSTGRES_PASSWORD}@postgres:5432/replay
+    entrypoint: ["replay"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  test:
+    profiles: ["tools"]
+    image: rust:1.94.1-bookworm
+    working_dir: /app
+    volumes:
+      - .:/app
+      - cargo-registry:/usr/local/cargo/registry
+      - cargo-git:/usr/local/cargo/git
+      - rust-target:/app/target
+    env_file: .env
+    environment:
+      DATABASE_URL: postgres://searcher:${POSTGRES_PASSWORD}@postgres:5432/searcher
+    entrypoint: ["bash", "-c"]
+    command:
+      - rustup component add rustfmt clippy && cargo fmt --check && cargo check --locked --all-targets --all-features && cargo clippy --locked --all-targets --all-features -- -D warnings && cargo test --locked --all-targets --all-features
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  postgres-data:
+  cargo-registry:
+  cargo-git:
+  rust-target:
+

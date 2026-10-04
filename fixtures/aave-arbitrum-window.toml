@@ -1,0 +1,25 @@
+chain_id = 42161
+pool = "0x794a61358D6845594F94dc1DB02A252b5b4814aD"
+pool_configurator = "0x8145eddDf43f50276641b55bd3AD95944510021E"
+oracle = "0xb56c2F0B653B2e0b10C9b928C8580Ac5Df02C7C7"
+protocol_data_provider = "0x243Aa95cAC2a25651eda86e80bEe66114413c43b"
+protocol_revision = "Aave V3 Arbitrum; pin implementation revision for the selected block range"
+start_block = 511591507
+native_asset = "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1"
+
+rpc_timeout_seconds = 10
+database_timeout_seconds = 5
+gas_price_gwei = "0.1"
+min_profit_usd = "1"
+estimated_gas_units = 500000
+dex_slippage_bps = 30
+flashloan_fee_bps = 9
+execution_risk_bps = 50
+max_candidate_refresh_per_block = 200
+
+# `feed` must be the contract address that emits AnswerUpdated and must map to
+# the corresponding underlying `asset`. Add every feed/source used by this Aave
+# Oracle before treating oracle-driven candidate refresh as complete.
+oracle_feeds = [
+  { asset = "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1", feed = "0x639Fe6ab55C921f74e7fac1ee960C0B6293ba612" },
+]
